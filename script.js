@@ -46,10 +46,16 @@ const validateMessageField = (messageValue) => {
     return true;
 }
 
+const saveData = () => {
+    localStorage.setItem('messages', JSON.stringify(messagesArray));
+}
+
 class Message {
-    constructor(author, body){
+    constructor(author, body, liked, disliked){
         this.author = author;
         this.body = body;
+        this.liked = liked;
+        this.disliked = disliked;
     }
 }
 
@@ -61,8 +67,33 @@ const renderMessages = (messagesArray) => {
             <li class="list-group-item">
                 <div class="fw-bold">${message.author}</div>
                 <span>${message.body}</span>
+                <button class="like-btn btn btn-info" ${message.liked && 'disabled'}>:)</button>
+                <button class="dislike-btn btn btn-warning" ${message.disliked && 'disabled'}>:(</button>
             </li>
         `;
+    }
+    const likesBtn = Array.from(document.getElementsByClassName('like-btn'));
+    for (const likeBtn of likesBtn) {
+        likeBtn.addEventListener('click', (e) => {
+            e.target.setAttribute('disabled', true);
+
+            const $parentLi = e.target.parentElement;
+
+            const messageToLike = messagesArray.find(msg => {
+                return msg.body ===  $parentLi.querySelector('span').innterText;
+            });
+            console.log(messageToLike);
+            messageToLike.liked = true;
+            saveData();
+
+        });
+    }
+
+    const dislikesBtn = Array.from(document.getElementsByClassName('dislike-btn'));
+    for (const dislikeBtn of dislikesBtn) {
+        dislikeBtn.addEventListener('click', (e) => {
+            e.target.setAttribute('disabled', true);
+        });
     }
 };
 
@@ -86,9 +117,10 @@ document.querySelector('#message-form').addEventListener('submit', (e) => {
 
     if(!isAuthorValid || !isMessageValid) return;
     
-    messagesArray.push(new Message(author, message));
+    messagesArray.push(new Message(author, message, false, false));
 
-    localStorage.setItem('messages', JSON.stringify(messagesArray));
+    saveData();
+    // localStorage.setItem('messages', JSON.stringify(messagesArray));
     renderMessages(messagesArray);
 });
 
