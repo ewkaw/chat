@@ -6,8 +6,8 @@ const $messageInput = document.getElementById('message');
 
 const $messageList = document.getElementById('message-list');
 
-const messagesArray = [];
-
+const persistedMessagesString = localStorage.getItem('messages') || '[]';
+const messagesArray = JSON.parse(persistedMessagesString);
 
 const validateAuthorField = (authorValue) => {
     if (!$authorErrorMessage)  {
@@ -55,7 +55,7 @@ class Message {
 
 const renderMessages = (messagesArray) => {
     $messageList.innerHTML = '';
-    
+
     for(const message of messagesArray){
         $messageList.innerHTML += `
             <li class="list-group-item">
@@ -87,6 +87,8 @@ document.querySelector('#message-form').addEventListener('submit', (e) => {
     if(!isAuthorValid || !isMessageValid) return;
     
     messagesArray.push(new Message(author, message));
+
+    localStorage.setItem('messages', JSON.stringify(messagesArray));
     renderMessages(messagesArray);
 });
 
@@ -98,6 +100,5 @@ $messageInput.addEventListener('input', (e) => {
     validateMessageField(e.target.value);
 });
 
-
-
+renderMessages(messagesArray);
 
