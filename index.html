@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+    <style>
+        .error-text {
+            color: red;
+        }
+
+        .error-border {
+            border: 1px solid red;
+        }
+    </style>
+
+    <script src="./script.js" defer></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <form id="message-form" action="" >
+            <label for="author" class="form-label">Autor</label>
+            <input type="text" name="author" id="author" class="form-control">
+            <div id="author-error" class="error-text"></div>
+    
+            <label for="message" class="form-label mt-3">Wiadomosc</label>
+            <textarea name="message" id="message" class="form-control"></textarea>
+            <div id="message-error" class="error-text"></div>
+    
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-success">Wyslij</button>
+            </div>
+        </form>
+
+        <h1 class="mt-5">Czat:</h1>
+
+        <ul id="message-list" class="list-group mt-3"></ul>
+    </div>
+</body>
+</html>
