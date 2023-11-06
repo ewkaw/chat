@@ -52,28 +52,68 @@ const saveData = () => {
 }
 
 class Message {
-    constructor(author, body, liked, disliked) {
+    constructor(author, body, liked, disliked, reply) {
         this.author = author;
         this.body = body;
         this.liked = liked;
         this.disliked = disliked;
-    }
+        this.reply = reply;
+
+    };
+}
+const renderReplyForm = (list) => {
+    //TODO add cancel reply button, after click delete this form
+    const $parentLi = list;
+    $parentLi.innerHTML += `<form id="reply-form" action="" >
+        <label for="reply-author" class="form-label">Autor</label>
+        <input type="text" name="reply-author" id="reply-author" class="form-control">
+        <div id="reply-author-error" class="error-text"></div>
+
+        <label for="reply-message" class="form-label mt-3">Wiadomosc</label>
+        <textarea name="reply-message" id="reply-message" class="form-control"></textarea>
+        <div id="reply-message-error" class="error-text"></div>
+
+        <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-success">Odpowiedź</button>
+        </div>
+    </form>`;
+   
+    document.getElementById('reply-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const replyForm = new FormData(e.target);
+
+        const author = replyForm.get('reply-author');
+        const message = replyForm.get('reply-message');
+        console.log(author);
+        console.log(message);
+        const $parentLi = e.target.parentElement;
+        const indexOfMessageToAddReply = messagesArray.findIndex(msg => {
+            return msg.body === $parentLi.querySelector('span').innerText;
+        });
+        messagesArray.splice(indexOfMessageToAddReply + 1, 0, new Message(author, message, false, false, true));
+        saveData();
+        renderMesssages(messagesArray);
+
+    });
 }
 
 const renderMesssages = (messagesArray) => {
     $messageList.innerHTML = '';
 
     for (const message of messagesArray) {
-        $messageList.innerHTML += `
-            <li class="list-group-item">
+        let liElement = `<li class="list-group-item ${message.reply && 'ps-5 list-group-item-dark'}">
                 <div class="fw-bold">${message.author}</div>
                 <span>${message.body}</span>
 
                 <button class="like-btn btn btn-info" ${message.liked && 'disabled'}>:)</button>
                 <button class="dislike-btn btn btn-warning"  ${message.disliked && 'disabled'}>:(</button>
                 <button class="delete-btn btn btn-danger">Usun</button>
-            </li>
-        `;
+            `;
+        if(!message.reply){
+            liElement += `<button class="reply-btn btn">Odpowiedź</button>`;
+        }
+        $messageList.innerHTML += liElement + `</li>`;
+
     }
 
     const likesBtn = Array.from(document.getElementsByClassName('like-btn'));
@@ -111,11 +151,18 @@ const renderMesssages = (messagesArray) => {
             const indexOfMessageToDelete = messagesArray.findIndex(msg => {
                 return msg.body === $parentLi.querySelector('span').innerText;
             });
-
+            // TODO also delete replies for the message 
             messagesArray.splice(indexOfMessageToDelete, 1);
             saveData();
         
             renderMesssages(messagesArray);
+        });
+    }
+
+    const repliesBtn = Array.from(document.getElementsByClassName('reply-btn'));
+    for (const replyBtn of repliesBtn){
+        replyBtn.addEventListener('click', (e) => {
+            renderReplyForm(e.target.parentElement);
         });
     }
 }
@@ -140,7 +187,7 @@ document.querySelector('#message-form').addEventListener('submit', (e) => {
 
     if (!isAuthorValid || !isMessageValid) return;
     
-    messagesArray.push(new Message(author, message, false, false));
+    messagesArray.push(new Message(author, message, false, false, false));
     
     saveData();
     renderMesssages(messagesArray);
