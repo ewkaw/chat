@@ -7,7 +7,9 @@ const $messageInput = document.getElementById('message');
 const $resetButton = document.getElementById('reset-btn');
 const $messageList = document.getElementById('message-list');
 
-const persistedMessagesString = localStorage.getItem('messages') || '[]';
+const $chatsList = document.getElementsByClassName("chat-link");
+const chatsList = Array.from($chatsList);
+let activeChat = 'general';
 
 class Message {
     replies = [];
@@ -25,21 +27,19 @@ class Message {
 const createMessages = (parsedMess) => {
     const createdMess = parsedMess.map((el) => {
         const mes = new Message(el.author, el.body, el.liked, el.disliked, el.timestamp);
-        for(const reply of el.replies){
+        for (const reply of el.replies) {
             mes.addReply(new Message(reply.author, reply.body, reply.liked, reply.disliked, reply.timestamp));
         }
         return mes;
     });
     return createdMess;
 }
-const messagesArray = createMessages(JSON.parse(persistedMessagesString));
-
 const validateAuthorField = (authorValue) => {
-    if (!$authorErrorMessage)  {
+    if (!$authorErrorMessage) {
         alert('Cos poszlo nie tak!');
         $authorInput.classList.add('error-border');
         return false;
-    } 
+    }
     if (!authorValue) {
         $authorErrorMessage.innerText = 'Pole wymagane!';
         $authorInput.classList.add('error-border');
@@ -57,7 +57,7 @@ const validateMessageField = (messageValue) => {
         document.getElementById('message-error').innerText = 'Pole wymagane!';
         document.getElementById('message').classList.add('error-border');
         return false;
-    } 
+    }
 
     if (messageValue.length < 2) {
         document.getElementById('message-error').innerText = 'Pole musi miec min 2 znaki!';
@@ -71,12 +71,11 @@ const validateMessageField = (messageValue) => {
     return true;
 }
 
-const saveData = () => {
-    localStorage.setItem('messages', JSON.stringify(messagesArray))
+const saveData = (messagesArray) => {
+    localStorage.setItem(`${activeChat}`, JSON.stringify(messagesArray))
 }
 
-
-const renderReplyForm = (list) => {
+const renderReplyForm = (list, messagesArray) => {
     const $parentLi = list;
     $parentLi.innerHTML += `<form id="reply-form" action="" >
         <label for="reply-author" class="form-label">Autor</label>
@@ -91,7 +90,7 @@ const renderReplyForm = (list) => {
             <button class="btn btn-success">Wyślij</button>
         </div>
     </form>`;
-   
+
     document.getElementById('reply-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const replyForm = new FormData(e.target);
@@ -105,7 +104,7 @@ const renderReplyForm = (list) => {
             return msg.body === $parentLi.querySelector('span').innerText;
         });
         messagesArray[indexOfMessageToAddReply].addReply(new Message(author, message, false, false, Date.now()))
-        saveData();
+        saveData(messagesArray);
         renderMesssages(messagesArray);
     });
 }
@@ -125,7 +124,7 @@ const renderMesssages = (messagesArray) => {
             `;
         $messageList.innerHTML += liElement;
         liElement = '';
-        for (const reply of message.replies){
+        for (const reply of message.replies) {
             liElement = `<li class="list-group-item ps-5 list-group-item-dark" timestamp="${reply.timestamp}">
                 <div class="fw-bold">${reply.author}</div>
                 <span>${reply.body}</span>
@@ -152,7 +151,7 @@ const renderMesssages = (messagesArray) => {
             });
 
             messageToLike.liked = true;
-            saveData();
+            saveData(messagesArray);
         });
     }
 
@@ -168,7 +167,7 @@ const renderMesssages = (messagesArray) => {
             });
 
             messageToDislike.disliked = true;
-            saveData();
+            saveData(messagesArray);
         });
     }
 
@@ -178,63 +177,38 @@ const renderMesssages = (messagesArray) => {
         deleteBtn.addEventListener('click', (e) => {
             const $parentLi = e.target.parentElement;
             let idx = 0;
-            for (const msg of messagesArray){
-                if (msg.timestamp == Number($parentLi.getAttribute("timestamp"))){
+            for (const msg of messagesArray) {
+                if (msg.timestamp == Number($parentLi.getAttribute("timestamp"))) {
                     messagesArray.splice(idx, 1);
                     break;
                 } else {
                     let replyIdx = 0;
                     let found = false;
-                    for(const reply of msg.replies){
-                        if (reply.timestamp == Number($parentLi.getAttribute("timestamp"))){
+                    for (const reply of msg.replies) {
+                        if (reply.timestamp == Number($parentLi.getAttribute("timestamp"))) {
                             msg.replies.splice(replyIdx, 1);
                             found = true;
                             break;
                         }
                         replyIdx++;
                     }
-                    if (found)
-                        break;
+                    if (found) break;
                 }
                 idx++;
             }
-            saveData();
-        
+            saveData(messagesArray);
+
             renderMesssages(messagesArray);
         });
     }
 
     const repliesBtn = Array.from(document.getElementsByClassName('reply-btn'));
-    for (const replyBtn of repliesBtn){
+    for (const replyBtn of repliesBtn) {
         replyBtn.addEventListener('click', (e) => {
-            renderReplyForm(e.target.parentElement);
+            renderReplyForm(e.target.parentElement, messagesArray);
         });
     }
 }
-
-document.querySelector('#message-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-
-    const author = formData.get('author');
-    const message = formData.get('message');
-
-    const isAuthorValid = validateAuthorField(author);
-    const isMessageValid = validateMessageField(message);
-
-    if (!isMessageValid) {
-        $messageInput.focus();
-    }
-    if (!isAuthorValid) {
-        $authorInput.focus();
-    }
-
-    if (!isAuthorValid || !isMessageValid) return;
-    messagesArray.push(new Message(author, message, false, false, Date.now()));
-    saveData();
-    renderMesssages(messagesArray);
-});
 
 $authorInput.addEventListener('input', (e) => {
     validateAuthorField(e.target.value);
@@ -250,4 +224,44 @@ $resetButton.addEventListener('click', () => {
     $messageInput.value = null;
 });
 
-renderMesssages(messagesArray);
+
+chatsList.forEach(chat => {
+    chat.addEventListener('click', (e) => {
+        chatsList.forEach(chat => {
+            chat.classList.remove('active');
+        });
+        e.target.classList.add('active');
+        activeChat = e.target.innerText;
+        const persistedMessagesString = localStorage.getItem(`${activeChat}`) || '[]';
+        const messagesArray = createMessages(JSON.parse(persistedMessagesString));
+        renderMesssages(messagesArray);
+
+        document.querySelector('#message-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+
+            const author = formData.get('author');
+            const message = formData.get('message');
+
+            const isAuthorValid = validateAuthorField(author);
+            const isMessageValid = validateMessageField(message);
+
+            if (!isMessageValid) {
+                $messageInput.focus();
+            }
+            if (!isAuthorValid) {
+                $authorInput.focus();
+            }
+
+            if (!isAuthorValid || !isMessageValid) return;
+            messagesArray.push(new Message(author, message, false, false, Date.now()));
+            saveData(messagesArray);
+            renderMesssages(messagesArray);
+        });
+    });
+    if (chat.innerText == 'general'){
+        chat.click();
+    }
+});
+
